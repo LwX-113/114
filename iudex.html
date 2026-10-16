@@ -1,0 +1,1013 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>广职网络华佗CampusInsight</title>
+<style>
+  :root {
+    --bg-main: #121212;
+    --bg-sidebar: #1c1c1e;
+    --bg-hover: #2c2c2e;
+    --text-primary: #ececec;
+    --text-secondary: #a0a0a0;
+    --bubble-user: #444444;
+    --bubble-bot: #2c2c2c;
+    --accent: #2563eb;
+    --border: #333;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-main);
+    color: var(--text-primary);
+  }
+
+  .app-container {
+    display: flex;
+    height: 100vh;
+  }
+
+  /* 左侧菜单栏 */
+  .sidebar {
+    width: 260px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    flex-shrink: 0;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: background 0.2s;
+    margin-bottom: 4px;
+    position: relative;
+  }
+
+  .menu-item:hover { background: var(--bg-hover); }
+  .menu-item.active { background: var(--bg-hover); color: var(--accent); }
+  
+  .menu-item .item-icon { 
+    margin-right: 12px; 
+    font-size: 18px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    width: 24px;
+  }
+  .menu-item .item-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  .menu-item .delete-btn {
+    display: none;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 6px;
+  }
+  .menu-item:hover .delete-btn { display: block; }
+  .menu-item .delete-btn:hover { color: var(--danger); }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .sidebar-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    margin-bottom: 8px;
+  }
+
+  .history-list-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .history-list {
+    list-style: none;
+    overflow-y: auto;
+  }
+
+  /* 右侧主区域 */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-main);
+    position: relative;
+  }
+
+  .header {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    border-bottom: 1px solid transparent;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20%; 
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .content-area::-webkit-scrollbar { width: 6px; }
+  .content-area::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+  /* 聊天气泡样式 */
+  .message-row {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+  }
+
+  .message-row.user { align-self: flex-end; align-items: flex-end; }
+  .message-row.bot { align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 12px 18px;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .bubble.user { background: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble.bot { background: var(--bubble-bot); color: var(--text-primary); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+
+  .response-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.8;
+  }
+
+  .empty-tip {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 22px;
+    font-weight: 600;
+    margin-top: 20%;
+  }
+
+  /* 底部输入框 */
+  .input-area {
+    padding: 16px 20%;
+    background: var(--bg-main);
+  }
+
+  .input-wrapper {
+    background: #2c2c2c;
+    border: 1px solid #444;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    padding: 6px 6px 6px 18px;
+    transition: border-color 0.2s;
+  }
+  .input-wrapper:focus-within { border-color: var(--accent); }
+
+  .input-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    padding: 8px 0;
+  }
+  .input-wrapper button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .input-wrapper button:hover { background: #1d4ed8; }
+  .input-wrapper button:disabled { background: #444; cursor: not-allowed; }
+
+  /* 通用工具页面样式 */
+  .tool-container {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .tool-card {
+    background: #1c1c1e;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .tool-title {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: #2c2c2c;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { height: 80px; resize: vertical; }
+
+  .btn-primary {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .static-badge {
+    display: inline-block;
+    background: #333;
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* 诊断和滑块特效 */
+  .diagnosis-progress {
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 10px;
+    display: none;
+  }
+  .diagnosis-bar {
+    width: 0%;
+    height: 100%;
+    background: var(--success);
+    transition: width 0.5s ease;
+  }
+  .diagnosis-log {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: #111;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: none;
+  }
+
+  .ap-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .ap-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: #444;
+    border-radius: 2px;
+  }
+  .ap-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  /* 通知提示弹窗 */
+  .toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1c1c1e;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 20px;
+    color: var(--text-primary);
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 9999;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    max-width: 360px;
+  }
+  .toast-notification.show {
+    transform: translateX(0);
+  }
+  .toast-notification .toast-title {
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .toast-notification .toast-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .toast-notification .toast-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+  }
+  .toast-notification .toast-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .toast-notification .toast-btn:hover { background: #1d4ed8; }
+  .toast-notification .toast-btn.secondary {
+    background: #333;
+  }
+  .toast-notification .toast-btn.secondary:hover { background: #444; }
+
+  /* 聊天气泡中的工单链接 */
+  .ticket-link-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: rgba(37, 99, 235, 0.15);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+  .ticket-link-inline:hover {
+    background: rgba(37, 99, 235, 0.25);
+  }
+
+  /* 工单列表中的来源标记 */
+  .ticket-source-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .ap-value {
+    font-size: 14px;
+    width: 50px;
+    text-align: right;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- 左侧菜单栏 -->
+  <aside class="sidebar">
+    <div class="menu-item" id="nav-ticket">
+      <span class="item-icon">🔧</span>
+      <span class="item-text">报修工单</span>
+    </div>
+    <div class="menu-item" id="nav-diagnosis">
+      <span class="item-icon">📡</span>
+      <span class="item-text">网络诊断</span>
+    </div>
+    <div class="menu-item" id="nav-ap-power">
+      <span class="item-icon">📶</span>
+      <span class="item-text">调节AP功率</span>
+    </div>
+    
+    <div class="sidebar-divider"></div>
+    
+    <div class="menu-item" id="newChatBtn">
+      <span class="item-icon">✨</span>
+      <span class="item-text">新对话</span>
+    </div>
+
+    <div class="history-list-container">
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">历史对话</div>
+      <ul class="history-list" id="historyList"></ul>
+    </div>
+  </aside>
+
+  <!-- 右侧主区域 -->
+  <main class="main-content">
+    <div class="header" id="headerTitle">广职网络华佗CampusInsight</div>
+    <div class="content-area" id="contentArea">
+      <!-- 聊天或工具内容会动态渲染在这里 -->
+      <div class="empty-tip">有什么我能帮你的吗？</div>
+    </div>
+    <div class="input-area" id="inputArea">
+      <div class="input-wrapper">
+        <input id="chatInput" placeholder="发消息或按住空格说话..." />
+        <button id="sendBtn">发送</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ================= 全局配置与状态 =================
+const API_URL = "http://localhost:3000/api/chat";
+const STORAGE_KEY_CHAT = "campus_chat_sessions_v3";
+const STORAGE_KEY_TICKETS = "campus_tickets_v1";
+
+let sessions = loadSessions();
+let activeId = null;
+let activeView = 'chat'; // 'chat', 'ticket', 'diagnosis', 'ap-power'
+let ticketFormMode = 'create'; // 'create' 或 'list'
+
+// ================= 初始化 =================
+if (sessions.length === 0) {
+  createSession();
+} else {
+  activeId = sessions[0].id;
+}
+
+// 绑定菜单事件
+document.getElementById("newChatBtn").addEventListener("click", () => { createSession(); activeView = 'chat'; renderApp(); });
+document.getElementById("nav-ticket").addEventListener("click", () => { activeView = 'ticket'; ticketFormMode = 'create'; renderApp(); });
+document.getElementById("nav-diagnosis").addEventListener("click", () => { activeView = 'diagnosis'; renderApp(); });
+document.getElementById("nav-ap-power").addEventListener("click", () => { activeView = 'ap-power'; renderApp(); });
+
+document.getElementById("historyList").addEventListener("click", (e) => {
+  const item = e.target.closest(".menu-item");
+  if (!item) return;
+  activeView = 'chat';
+  activeId = item.dataset.id;
+  renderApp();
+});
+
+// 发送消息逻辑
+const input = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// 初始渲染
+renderApp();
+
+
+// ================= 核心渲染引擎 =================
+function renderApp() {
+  renderMenu();
+  renderContent();
+  document.getElementById("inputArea").style.display = activeView === 'chat' ? 'block' : 'none';
+  
+  let titleMap = { 'chat': '广职网络华佗CampusInsight', 'ticket': '报修工单', 'diagnosis': '网络诊断', 'ap-power': '调节AP功率' };
+  document.getElementById("headerTitle").textContent = titleMap[activeView] || '广职网络华佗CampusInsight';
+}
+
+function renderMenu() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  
+  sessions.forEach(s => {
+    const li = document.createElement("li");
+    li.className = "menu-item" + (activeView === 'chat' && s.id === activeId ? " active" : "");
+    li.dataset.id = s.id;
+    li.innerHTML = `
+      <span class="item-icon">💬</span>
+      <span class="item-text">${s.title}</span>
+      <span class="delete-btn" onclick="deleteSession('${s.id}', event)">✕</span>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function renderContent() {
+  const box = document.getElementById("contentArea");
+  box.innerHTML = "";
+
+  if (activeView === 'ticket') {
+    renderTicketTool(box);
+  } else if (activeView === 'diagnosis') {
+    renderDiagnosisTool(box);
+  } else if (activeView === 'ap-power') {
+    renderApPowerTool(box);
+  } else if (activeView === 'chat') {
+    renderChat(box);
+  }
+}
+
+// ================= 聊天模块 =================
+function renderChat(box) {
+  const session = sessions.find(s => s.id === activeId);
+  if (!session || session.messages.length === 0) {
+    box.innerHTML = '<div class="empty-tip">有什么我能帮你的吗？</div>';
+    return;
+  }
+  session.messages.forEach(msg => appendMessageDom(box, msg.role, msg.content, msg.time));
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  if (activeView !== 'chat') return;
+
+  const session = sessions.find(s => s.id === activeId);
+  if (!session) return;
+
+  session.messages.push({ role: "user", content: text });
+  if (session.title === "新对话") session.title = text.slice(0, 15);
+  
+  input.value = "";
+  sendBtn.disabled = true;
+  saveSessions();
+  renderMenu();
+  renderContent();
+
+  const loadingId = "loading-" + Date.now();
+  const box = document.getElementById("contentArea");
+  appendMessageDom(box, "bot", "正在思考...", null, loadingId);
+
+  // 实时计时器
+  const startTime = performance.now();
+  let timerInterval = setInterval(() => {
+    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+    const timeEl = box.querySelector('#' + loadingId + ' .response-time');
+    if (timeEl) {
+      timeEl.textContent = '⏱ ' + elapsed + 's';
+    }
+  }, 100);
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    const endTime = performance.now();
+    const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+    clearInterval(timerInterval);
+    document.getElementById(loadingId)?.remove();
+
+    let reply = "智能体未返回内容";
+    if (data.code === 0 && data.data && data.data.reply) reply = data.data.reply;
+    
+    session.messages.push({ role: "bot", content: reply, time: duration });
+    
+    // 解析智能体回复中的诊断结果和工单号，自动接入报修工单
+    const parsed = parseAIReplyForTicket(reply);
+    if (parsed.hasTicket) {
+      autoCreateTicketFromAI(parsed);
+    }
+  } catch (err) {
+    clearInterval(timerInterval);
+    document.getElementById(loadingId)?.remove();
+    session.messages.push({ role: "bot", content: "连接后端失败，请检查后端是否启动。" });
+  }
+
+  saveSessions();
+  renderContent();
+  sendBtn.disabled = false;
+}
+
+function appendMessageDom(box, role, content, time, elemId) {
+  const empty = box.querySelector(".empty-tip"); if(empty) empty.remove();
+  const row = document.createElement("div");
+  row.className = "message-row " + role;
+  if (elemId) row.id = elemId;
+  const bubble = document.createElement("div");
+  bubble.className = "bubble " + role;
+
+  // 如果是机器人回复，检查是否包含工单号，添加可点击链接
+  if (role === "bot" && content) {
+    const ticketMatch = content.match(/工单[号编号]?[\s：:]*#?([A-Za-z0-9_-]+)/i);
+    if (ticketMatch) {
+      const ticketNo = ticketMatch[1];
+      // 用 div 承载文本和链接
+      bubble.innerHTML = content.replace(
+        new RegExp('(工单[号编号]?[\\s：:]*(?:#)?' + ticketNo + ')', 'i'),
+        `<span style="color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline;" onclick="navigateToTicket('${ticketNo}')">$1</span>`
+      );
+    } else {
+      bubble.textContent = content;
+    }
+  } else {
+    bubble.textContent = content;
+  }
+
+  row.appendChild(bubble);
+
+  if (role === "bot") {
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "response-time";
+    timeDiv.textContent = time ? '⏱ ' + time + 's' : '⏱ 0.0s';
+    row.appendChild(timeDiv);
+  }
+  box.appendChild(row);
+}
+
+// 从聊天点击跳转到工单列表
+window.navigateToTicket = function(ticketNo) {
+  activeView = 'ticket';
+  ticketFormMode = 'list';
+  renderApp();
+  // 高亮匹配的工单（通过滚动到顶部实现视觉反馈）
+  setTimeout(() => {
+    const box = document.getElementById("contentArea");
+    if (box) box.scrollTop = 0;
+  }, 100);
+};
+
+// ================= 报修工单模块 =================
+function renderTicketTool(box) {
+  const tickets = JSON.parse(localStorage.getItem(STORAGE_KEY_TICKETS)) || [];
+  
+  if (ticketFormMode === 'create') {
+    box.innerHTML = `
+      <div class="tool-container">
+        <div class="tool-card">
+          <div class="tool-title">提交报修工单</div>
+          <div class="form-group">
+            <label class="form-label">故障地点</label>
+            <input class="form-input" id="ticket-loc" placeholder="例如：第二教学楼 302 教室" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">故障描述</label>
+            <textarea class="form-textarea" id="ticket-desc" placeholder="请详细描述您的网络故障情况..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">联系电话</label>
+            <input class="form-input" id="ticket-phone" placeholder="请输入您的手机号" />
+          </div>
+          <button class="btn-primary" onclick="submitTicket()">提交工单</button>
+        </div>
+        <div class="tool-card" style="cursor:pointer" onclick="ticketFormMode='list'; renderApp()">
+          <div class="tool-title" style="margin-bottom:0; text-align:center;">📋 查看我的历史工单</div>
+        </div>
+      </div>
+    `;
+  } else {
+    let html = `<div class="tool-container"><div class="tool-card"><div class="tool-title">我的报修工单记录</div>`;
+    if (tickets.length === 0) {
+      html += `<p style="color:var(--text-secondary); text-align:center;">暂无报修记录。</p>`;
+    } else {
+      tickets.reverse().forEach((t, i) => {
+        const sourceBadge = t.source === 'ai' ? '<span class="ticket-source-badge">来自智能体</span>' : '';
+        const ticketNoHtml = t.ticketNo ? `<div style="font-size:11px; color:var(--accent); margin-bottom:4px;">工单号: ${t.ticketNo} ${sourceBadge}</div>` : '';
+        html += `
+          <div style="padding: 12px 0; border-bottom: 1px solid #333;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+              <span style="font-weight:600;">#${i + 1} ${t.location}</span>
+              <span style="color:var(--success); font-size:12px;">${t.status}</span>
+            </div>
+            ${ticketNoHtml}
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">${t.description}</div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:#666;">
+              <span>电话: ${t.phone || '未填写'}</span>
+              <span>${new Date(t.time).toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+    html += `</div><div class="tool-card" style="cursor:pointer" onclick="ticketFormMode='create'; renderApp()"><div class="tool-title" style="margin-bottom:0; text-align:center;">➕ 提交新工单</div></div></div>`;
+    box.innerHTML = html;
+  }
+}
+
+window.submitTicket = function() {
+  const loc = document.getElementById("ticket-loc").value.trim();
+  const desc = document.getElementById("ticket-desc").value.trim();
+  const phone = document.getElementById("ticket-phone").value.trim();
+  if(!loc || !desc || !phone) return alert("请完整填写所有信息！");
+  
+  const tickets = JSON.parse(localStorage.getItem(STORAGE_KEY_TICKETS)) || [];
+  tickets.push({ location: loc, description: desc, phone: phone, status: "已提交", time: Date.now() });
+  localStorage.setItem(STORAGE_KEY_TICKETS, JSON.stringify(tickets));
+  alert("工单提交成功！");
+  ticketFormMode = 'list';
+  renderApp();
+}
+
+// ================= 网络诊断（静态页面） =================
+function renderDiagnosisTool(box) {
+  box.innerHTML = `
+    <div class="tool-container">
+      <div class="tool-card">
+        <span class="static-badge">静态页面</span>
+        <div class="tool-title">一键网络诊断</div>
+        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">检测当前网络环境是否存在连接或配置异常。</p>
+        <button class="btn-primary" disabled>功能开发中，敬请期待</button>
+        <div class="diagnosis-progress" style="display:block;">
+          <div class="diagnosis-bar" style="width:0%;"></div>
+        </div>
+        <div class="diagnosis-log" style="display:block; color:var(--text-secondary);">
+          <p>此功能即将上线，届时将支持：</p>
+          <ul style="margin-top:8px; padding-left:20px;">
+            <li>网关连通性检测</li>
+            <li>DNS 解析测试</li>
+            <li>DHCP 服务器状态检查</li>
+            <li>局域网广播风暴排查</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ================= 调节AP功率（静态页面） =================
+function renderApPowerTool(box) {
+  box.innerHTML = `
+    <div class="tool-container">
+      <div class="tool-card">
+        <span class="static-badge">静态页面</span>
+        <div class="tool-title">调节 AP 发射功率</div>
+        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">远程调节校园 AP 设备的发射功率，优化无线网络覆盖。</p>
+        <div class="form-group">
+          <label class="form-label">选择设备 AP</label>
+          <select class="form-select" disabled>
+            <option>AP-B1F-001 (图书馆一楼)</option>
+            <option>AP-B2F-003 (图书馆二楼)</option>
+            <option>AP-C3F-012 (第三教学楼)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">2.4G 频段功率 (dBm)</label>
+          <div class="ap-slider-container">
+            <input type="range" min="0" max="30" value="15" class="ap-slider" disabled>
+            <span class="ap-value">15</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">5G 频段功率 (dBm)</label>
+          <div class="ap-slider-container">
+            <input type="range" min="0" max="30" value="20" class="ap-slider" disabled>
+            <span class="ap-value">20</span>
+          </div>
+        </div>
+        <button class="btn-primary" disabled>功能开发中，敬请期待</button>
+      </div>
+    </div>
+  `;
+}
+
+// ================= 通用辅助方法 =================
+function createSession() {
+  const id = "chat_" + Date.now();
+  sessions.unshift({ id, title: "新对话", messages: [], createdAt: Date.now() });
+  activeId = id;
+  saveSessions();
+}
+function loadSessions() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_CHAT)) || []; } catch { return []; } }
+function saveSessions() { localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(sessions)); }
+
+// ================= 智能体回复解析与自动工单创建 =================
+/**
+ * 解析智能体回复中的网络诊断结果和报修工单号
+ * 返回对象包含: hasTicket, ticketNo, diagnosisResult, location, description
+ */
+function parseAIReplyForTicket(replyText) {
+  if (!replyText) return { hasTicket: false };
+
+  const result = { hasTicket: false };
+
+  // 提取工单号 - 支持多种格式
+  // 匹配: "工单号：xxx" "工单编号：xxx" "工单编号xxx" "工单号xxx" "Ticket:#xxx" 等
+  const ticketPatterns = [
+    /工单[号编号]?[：:]\s*#?([A-Za-z0-9_-]+)/i,
+    /ticket[\s:：]*#?([A-Za-z0-9_-]+)/i,
+    /工单[\s_]*[号编号]?[\s:：]*([A-Za-z0-9_-]+)/i,
+  ];
+
+  for (const pattern of ticketPatterns) {
+    const match = replyText.match(pattern);
+    if (match) {
+      result.ticketNo = match[1].trim();
+      break;
+    }
+  }
+
+  if (!result.ticketNo) return { hasTicket: false };
+
+  // 提取诊断结果
+  // 匹配: "诊断结果：xxx" "网络诊断：xxx" "检测结果：xxx" 等
+  const diagnosisPatterns = [
+    /诊断结果[：:](.*?)(?:\n|$)/is,
+    /网络诊断[：:](.*?)(?:\n|$)/is,
+    /检测结果[：:](.*?)(?:\n|$)/is,
+    /诊断[结论结果][：:](.*?)(?:\n|$)/is,
+  ];
+
+  for (const pattern of diagnosisPatterns) {
+    const match = replyText.match(pattern);
+    if (match) {
+      result.diagnosisResult = match[1].trim();
+      break;
+    }
+  }
+
+  // 如果没有匹配到专门的诊断结果段，取工单号之前的一段诊断相关内容
+  if (!result.diagnosisResult) {
+    // 尝试提取 "故障分析" 或 "问题描述" 等内容
+    const faultPatterns = [
+      /故障分析[：:](.*?)(?:\n|$)/is,
+      /问题描述[：:](.*?)(?:\n|$)/is,
+      /故障描述[：:](.*?)(?:\n|$)/is,
+      /原因分析[：:](.*?)(?:\n|$)/is,
+    ];
+    for (const pattern of faultPatterns) {
+      const match = replyText.match(pattern);
+      if (match) {
+        result.description = match[1].trim();
+        break;
+      }
+    }
+  }
+
+  // 提取地点信息
+  const locationPatterns = [
+    /地点[：:](.*?)(?:\n|$)/i,
+    /位置[：:](.*?)(?:\n|$)/i,
+    /故障地点[：:](.*?)(?:\n|$)/i,
+    /所在[位置地点][：:](.*?)(?:\n|$)/i,
+  ];
+  for (const pattern of locationPatterns) {
+    const match = replyText.match(pattern);
+    if (match) {
+      result.location = match[1].trim();
+      break;
+    }
+  }
+
+  // 如果回复中包含常见的地点关键词（楼号+房间号），也尝试提取
+  if (!result.location) {
+    const roomPattern = /(第?[一二三四五六七八九十百]+教学?[楼栋]?[楼]?\s*[\d]+?[F楼层]?\s*\d*[0-9]*[教室室厅])/i;
+    const match = replyText.match(roomPattern);
+    if (match) {
+      result.location = match[1].trim();
+    }
+  }
+
+  result.hasTicket = true;
+  return result;
+}
+
+/**
+ * 根据解析结果自动创建报修工单
+ */
+function autoCreateTicketFromAI(parsed) {
+  const tickets = JSON.parse(localStorage.getItem(STORAGE_KEY_TICKETS)) || [];
+
+  // 检查是否已有相同工单号，避免重复创建
+  const existing = tickets.find(t => t.ticketNo === parsed.ticketNo);
+  if (existing) {
+    // 更新已有工单的诊断结果
+    if (parsed.diagnosisResult) {
+      existing.diagnosisResult = parsed.diagnosisResult;
+    }
+    localStorage.setItem(STORAGE_KEY_TICKETS, JSON.stringify(tickets));
+    showToast('工单已更新', '工单 #' + parsed.ticketNo + ' 的诊断结果已同步更新。', [
+      { text: '查看工单', action: () => { ticketFormMode = 'list'; renderApp(); hideToast(); } }
+    ]);
+    return;
+  }
+
+  // 创建新工单
+  const newTicket = {
+    location: parsed.location || '待确认',
+    description: parsed.diagnosisResult || parsed.description || '智能体自动诊断生成',
+    phone: '',
+    status: '诊断完成',
+    time: Date.now(),
+    ticketNo: parsed.ticketNo,
+    source: 'ai', // 标记来源为智能体
+    diagnosisResult: parsed.diagnosisResult || ''
+  };
+
+  tickets.push(newTicket);
+  localStorage.setItem(STORAGE_KEY_TICKETS, JSON.stringify(tickets));
+
+  // 显示通知
+  let toastMsg = '检测到报修工单 #' + parsed.ticketNo;
+  if (parsed.diagnosisResult) {
+    toastMsg += '，诊断结果已自动记录';
+  }
+  showToast('自动创建工单', toastMsg, [
+    { text: '查看工单', action: () => { ticketFormMode = 'list'; renderApp(); hideToast(); } },
+    { text: '关闭', action: hideToast, cls: 'secondary' }
+  ]);
+}
+
+/**
+ * 显示 Toast 通知
+ */
+function showToast(title, body, actions) {
+  const toast = document.getElementById('toastNotification');
+  const titleEl = document.getElementById('toastTitle');
+  const bodyEl = document.getElementById('toastBody');
+  const actionsEl = document.getElementById('toastActions');
+
+  titleEl.textContent = title;
+  bodyEl.textContent = body;
+  actionsEl.innerHTML = '';
+
+  if (actions && actions.length > 0) {
+    actions.forEach(a => {
+      const btn = document.createElement('button');
+      btn.className = 'toast-btn' + (a.cls ? ' ' + a.cls : '');
+      btn.textContent = a.text;
+      btn.addEventListener('click', a.action);
+      actionsEl.appendChild(btn);
+    });
+  }
+
+  // 显示
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // 5秒后自动隐藏
+  if (toast._timer) clearTimeout(toast._timer);
+  toast._timer = setTimeout(hideToast, 5000);
+}
+
+function hideToast() {
+  const toast = document.getElementById('toastNotification');
+  toast.classList.remove('show');
+}
+
+function deleteSession(id, event) {
+  event.stopPropagation();
+  if (!confirm("确定删除该对话吗？")) return;
+  sessions = sessions.filter(s => s.id !== id);
+  if (activeId === id) { activeId = sessions.length ? sessions[0].id : null; if (!activeId) createSession(); }
+  saveSessions(); renderApp();
+}
+</script>
+
+  <!-- 通知提示弹窗 -->
+  <div class="toast-notification" id="toastNotification">
+    <div class="toast-title" id="toastTitle"></div>
+    <div class="toast-body" id="toastBody"></div>
+    <div class="toast-actions" id="toastActions"></div>
+  </div>
+</body>
+</html>
